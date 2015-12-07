@@ -9,11 +9,7 @@ module Roadie
   module ActionMailerExtensions
     def self.included(base)
       base.class_eval do
-        if base.method_defined?(:collect_responses)
-          alias_method_chain :collect_responses, :inline_styles
-        else
-          alias_method_chain :collect_responses_and_parts_order, :inline_styles
-        end
+        alias_method_chain :collect_responses, :inline_styles
         alias_method_chain :mail, :inline_styles
       end
     end
