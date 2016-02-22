@@ -7,15 +7,8 @@ module Roadie
   #
   # If you want to add Roadie to any other mail framework, take a look at how this module is implemented.
   module ActionMailerExtensions
-    def self.included(base)
-      base.class_eval do
-        alias_method_chain :collect_responses, :inline_styles
-        alias_method_chain :mail, :inline_styles
-      end
-    end
-
     protected
-      def mail_with_inline_styles(headers = {}, &block)
+      def mail(headers = {}, &block)
         if headers.has_key?(:css)
           @targets = headers[:css]
         else
@@ -28,28 +21,19 @@ module Roadie
           @after_inlining_handler = default_after_inlining || Roadie.after_inlining_handler 
         end
 
-        mail_without_inline_styles(headers, &block).tap do |email|
+        super(headers, &block).tap do |email|
           email.header.fields.delete_if { |field| %w(css after_inlining).include?(field.name) }
         end
+
       end
 
       # Rails 4
-      def collect_responses_with_inline_styles(headers, &block)
-        responses = collect_responses_without_inline_styles(headers, &block)
+      def collect_responses(headers, &block)
+        responses = super(headers, &block)
         if Roadie.enabled?
           responses.map { |response| inline_style_response(response) }
         else
           responses
-        end
-      end
-
-      # Rails 3
-      def collect_responses_and_parts_order_with_inline_styles(headers, &block)
-        responses, order = collect_responses_and_parts_order_without_inline_styles(headers, &block)
-        if Roadie.enabled?
-          [responses.map { |response| inline_style_response(response) }, order]
-        else
-          [responses, order]
         end
       end
 
@@ -88,4 +72,5 @@ module Roadie
         end
       end
   end
+  ActionMailer::Base.send(:prepend, ActionMailerExtensions)
 end
